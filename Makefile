@@ -2,7 +2,6 @@
 CC = gcc
 
 # Add your choice of flags
-CFLAGS = -O3 -Wall -Wextra -pg -g -fopenmp
 LDLIBS = -lm
 
 all : cg

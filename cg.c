@@ -233,7 +233,7 @@ double dot(const int n, const double *x, const double *y)
 	double sum = 0.0;
 	int i;
 
-	#pragma omp parallel for private(i) reduction(+:sum)
+	#pragma omp parallel for private(i, sum)
 	for (i = 0; i < n; i++)
 		sum += x[i] * y[i];
 	return sum;
@@ -287,7 +287,7 @@ void cg_solve(const struct csr_matrix_t *A, const double *b, double *x, const do
 
 	double start = wtime();
 	double last_display = start;
-	
+
 	int iter = 0;
 	while (norm(n, r) > epsilon) {
 		/* loop invariant : rz = dot(r, z) */

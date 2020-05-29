@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 #include "mmio.h"
+#include <omp.h>
 
 #define THRESHOLD 1e-8		// maximum tolerance threshold
 
@@ -195,10 +196,9 @@ void extract_diagonal(const struct csr_matrix_t *A, double *d)
 	double *Ax = A->Ax;
 	int u;
 
+	#pragma omp parallel for simd
 	for (int i = 0; i < n; i++) {
 		d[i] = 0.0;
-
-		#pragma omp parallel for private(u)
 		for (u = Ap[i]; u < Ap[i + 1]; u++)
 			if (i == Aj[u])
 				d[i] += Ax[u];
@@ -212,17 +212,17 @@ void sp_gemv(const struct csr_matrix_t *A, const double *x, double *y)
 	int *Ap = A->Ap;
 	int *Aj = A->Aj;
 	double *Ax = A->Ax;
-	int u,j;
 
-	#pragma omp parallel for private(u)
+	#pragma omp parallel for simd
 	for (int i = 0; i < n; i++) {
-		y[i] = 0;
-		for (u = Ap[i]; u < Ap[i + 1]; u++) {
-			j = Aj[u];
+		 y[i] = 0;
+		for (int u = Ap[i]; u < Ap[i + 1]; u++) {
+			int j = Aj[u];
 			double A_ij = Ax[u];
 			y[i] += A_ij * x[j];
 		}
 	}
+
 }
 
 /*************************** Vector operations ********************************/
@@ -231,10 +231,9 @@ void sp_gemv(const struct csr_matrix_t *A, const double *x, double *y)
 double dot(const int n, const double *x, const double *y)
 {
 	double sum = 0.0;
-	int i;
 
-	#pragma omp parallel for private(i) reduction(+:sum)
-	for (i = 0; i < n; i++)
+	#pragma omp parallel for reduction(+:sum)
+	for (int i = 0; i < n; i++)
 		sum += x[i] * y[i];
 	return sum;
 }
@@ -242,7 +241,11 @@ double dot(const int n, const double *x, const double *y)
 /* euclidean norm (a.k.a 2-norm) */
 double norm(const int n, const double *x)
 {
-	return sqrt(dot(n, x, x));
+	double sum = 0.0;
+	#pragma omp parallel for reduction(+:sum)
+	for (int i = 0; i < n; i++)
+		sum += x[i] * x[i];
+	return sqrt(sum);
 }
 
 /*********************** conjugate gradient algorithm *************************/
@@ -273,39 +276,48 @@ void cg_solve(const struct csr_matrix_t *A, const double *b, double *x, const do
 	 */
 
 	/* We use x == 0 --- this avoids the first matrix-vector product. */
-
-	for (int i = 0; i < n; i++)
+	#pragma omp parallel for simd
+	for (int i = 0; i < n; i++){
 		x[i] = 0.0;
-	for (int i = 0; i < n; i++)	// r <-- b - Ax == b
+	//for (int i = 0; i < n; i++)	// r <-- b - Ax == b
 		r[i] = b[i];
-	for (int i = 0; i < n; i++)	// z <-- M^(-1).r
+	//for (int i = 0; i < n; i++)	// z <-- M^(-1).r
 		z[i] = r[i] / d[i];
-	for (int i = 0; i < n; i++)	// p <-- z
+	//for (int i = 0; i < n; i++)	// p <-- z
 		p[i] = z[i];
+	}
 
 	double rz = dot(n, r, z);
 
+	//fprintf(stderr, "p = %f\n", norm(n, p));
+
 	double start = wtime();
 	double last_display = start;
-	
+
 	int iter = 0;
 	while (norm(n, r) > epsilon) {
 		/* loop invariant : rz = dot(r, z) */
 		double old_rz = rz;
 
-		#pragma omp single
 		sp_gemv(A, p, q);	/* q <-- A.p */
 		double alpha = old_rz / dot(n, p, q);
-		for (int i = 0; i < n; i++)	// x <-- x + alpha*p
+
+		#pragma omp parallel for simd
+		for (int i = 0; i < n; i++){	// x <-- x + alpha*p
 			x[i] += alpha * p[i];
-		for (int i = 0; i < n; i++)	// r <-- r - alpha*q
+		//for (int i = 0; i < n; i++)	// r <-- r - alpha*q
 			r[i] -= alpha * q[i];
-		for (int i = 0; i < n; i++)	// z <-- M^(-1).r
+		//for (int i = 0; i < n; i++)	// z <-- M^(-1).r
 			z[i] = r[i] / d[i];
+		}
+
 		rz = dot(n, r, z);	// restore invariant
 		double beta = rz / old_rz;
+
+		#pragma omp parallel for simd
 		for (int i = 0; i < n; i++)	// p <-- z + beta*p
 			p[i] = z[i] + beta * p[i];
+
 		iter++;
 		double t = wtime();
 		if (t - last_display > 0.5) {
@@ -404,6 +416,7 @@ int main(int argc, char **argv)
 	if (safety_check) {
 		double *y = scratch;
 		sp_gemv(A, x, y);	// y = Ax
+		#pragma omp parallel for simd
 		for (int i = 0; i < n; i++)	// y = Ax - b
 			y[i] -= b[i];
 		fprintf(stderr, "[check] max error = %2.2e\n", norm(n, y));

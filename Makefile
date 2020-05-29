@@ -2,17 +2,21 @@
 CC = gcc
 
 # Add your choice of flags
-CFLAGS = -O3 -Wall -Wextra -pg -g -fopenmp
+CFLAGS = -O3 -Wall -Wextra -g -fopenmp
 LDLIBS = -lm
+MATRIX = cfd2.mtx.gz
 
-all : cg
+all : cg_omp
 
-cg : cg.o mmio.o
-		$(CC) $(CFLAGS) -o cg cg.o mmio.o $(LDLIBS)
+cg_omp : cg_omp.o mmio.o
+	$(CC) $(CFLAGS) -o cg_omp cg_omp.o mmio.o $(LDLIBS)
 
 mmio.o : mmio.c mmio.h
-cg.o : cg.c mmio.h
+cg_omp.o : cg_omp.c mmio.h
+
+exec : cg_omp
+	sh -c "zcat ${MATRIX} | ./$< --seed 13 --solution x.txt"
 
 .PHONY: clean
 clean :
-	rm -rf cg *.o
+	rm -rf cg_omp *.o

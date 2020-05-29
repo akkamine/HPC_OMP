@@ -15,7 +15,7 @@ mmio.o : mmio.c mmio.h
 cg_omp.o : cg_omp.c mmio.h
 
 exec : cg_omp
-	sh -c "zcat ${MATRIX} | ./$< --seed 13 --solution x.txt"
+	sh -c "zcat ${MATRIX} | ./$< --seed 32 --solution x.txt"
 
 .PHONY: clean
 clean :

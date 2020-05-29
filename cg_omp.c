@@ -276,7 +276,6 @@ void cg_solve(const struct csr_matrix_t *A, const double *b, double *x, const do
 
 	/* Isolate diagonal */
 	extract_diagonal(A, d);
-
 	/*
 	 * This function follows closely the pseudo-code given in the (english)
 	 * Wikipedia page "Conjugate gradient method". This is the version with

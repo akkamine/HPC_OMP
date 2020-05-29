@@ -16,18 +16,16 @@ params['version'] = 3
 params['proof'] = 0x65dec1542f679f51
 
 # Paramètres du calcul (à adapter)
-params['matrix'] = "bcsstk13"
+params['matrix'] = "hood"
 params['users'] = ["akk"]
 
 # Description du code exécuté
-params['software'] = """Code séquentiel fourni.
-Pas d'améliorations apportées."""
+params['software'] = """Code OMP."""
 
 # Description du matériel utilisé pour l'exécution
 params['nodes'] = 4   # nombre de noeuds
-params['cores'] = 8   # nombre total de coeurs
-params['hardware'] = """4 PCs de la Salle 327 (Esclangon).
-Machines de bureau DELL équipés de CPU Intel i3 à 2 coeurs, 3Ghz, et 4Go de RAM."""
+params['cores'] = 4   # nombre total de coeurs
+params['hardware'] = """I3 7XXX 4 cors."""
 
 # Comment exécuter le solveur :
 #   {matrix} sera remplacé par la valeur ci-dessus.

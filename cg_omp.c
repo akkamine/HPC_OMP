@@ -231,30 +231,23 @@ void sp_gemv(const struct csr_matrix_t *A, const double *x, double *y)
 double dot(const int n, const double *x, const double *y)
 {
 	double sum = 0.0;
-
-<<<<<<< HEAD:cg_omp.c
-	#pragma omp parallel for reduction(+:sum)
-=======
 	#pragma omp parallel for simd reduction(+:sum)
->>>>>>> 9ac4729f3172883e2652e95bb0cbb49c2a5e1d2b:cg.c
 	for (int i = 0; i < n; i++)
-		sum += x[i] * y[i];
+	        sum += x[i] * y[i];
 	return sum;
 }
+
 
 /* euclidean norm (a.k.a 2-norm) */
 double norm(const int n, const double *x)
 {
 	double sum = 0.0;
-<<<<<<< HEAD:cg_omp.c
-	#pragma omp parallel for reduction(+:sum)
-=======
 	#pragma omp parallel for simd reduction(+:sum)
->>>>>>> 9ac4729f3172883e2652e95bb0cbb49c2a5e1d2b:cg.c
 	for (int i = 0; i < n; i++)
-		sum += x[i] * x[i];
+	        sum += x[i] * x[i];
 	return sqrt(sum);
 }
+
 
 /*********************** conjugate gradient algorithm *************************/
 
@@ -283,12 +276,8 @@ void cg_solve(const struct csr_matrix_t *A, const double *b, double *x, const do
 	 */
 
 	/* We use x == 0 --- this avoids the first matrix-vector product. */
-<<<<<<< HEAD:cg_omp.c
 	#pragma omp parallel for simd
 	for (int i = 0; i < n; i++){
-=======
-	for (int i = 0; i < n; i++)
->>>>>>> 9ac4729f3172883e2652e95bb0cbb49c2a5e1d2b:cg.c
 		x[i] = 0.0;
 	//for (int i = 0; i < n; i++)	// r <-- b - Ax == b
 		r[i] = b[i];
